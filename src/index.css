@@ -1,0 +1,208 @@
+/* Modern base styles and gradient background */
+:root {
+  --bg-start: #0f172a; /* slate-900 */
+  --bg-end: #1e293b;   /* slate-800 */
+  --primary: #6366f1;  /* indigo-500 */
+  --primary-2: #a78bfa; /* violet-400 */
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --text: #f8fafc;     /* very light */
+  --muted: #cbd5e1;    /* light gray */
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+/* Prevent stray horizontal scroll */
+html, body { overflow-x: hidden; }
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: linear-gradient(120deg, var(--bg-start), var(--bg-end));
+  background-attachment: fixed;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { opacity: 0.9; }
+
+.page-container {
+  position: relative;
+  padding: 24px;
+  overflow-x: hidden; /* clip animated blobs and wide children */
+}
+
+/* subtle animated gradient blobs */
+.gradient-blob {
+  position: absolute;
+  filter: blur(90px);
+  opacity: 0.22;
+  z-index: 0;
+  animation: float 18s ease-in-out infinite;
+}
+.gradient-blob.blob-1 { top: -80px; left: -60px; width: 320px; height: 320px; background: radial-gradient(circle at 30% 30%, #6366f1, transparent 60%); }
+.gradient-blob.blob-2 { bottom: -80px; right: -60px; width: 360px; height: 360px; background: radial-gradient(circle at 70% 70%, #a78bfa, transparent 60%); animation-delay: 6s; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(12px) translateX(-8px); }
+}
+
+/* glass cards */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+/* Hero */
+.hero { position: relative; overflow: hidden; }
+.hero .shine {
+  position: absolute; inset: -40%;
+  background: radial-gradient(circle at 30% 20%, rgba(167,139,250,.25), transparent 50%),
+              radial-gradient(circle at 70% 80%, rgba(99,102,241,.2), transparent 50%);
+  filter: blur(60px);
+  animation: float 16s ease-in-out infinite;
+  pointer-events: none;
+}
+.hero-title {
+  font-size: clamp(28px, 6vw, 44px);
+  line-height: 1.15;
+  background: linear-gradient(90deg, var(--primary-2), var(--primary));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero-actions .ant-btn { transition: transform 150ms ease; }
+.hero-actions .ant-btn:hover { transform: translateY(-2px); }
+
+/* Features */
+.feature-card { transition: transform 180ms ease, box-shadow 180ms ease; height: 100%; }
+.feature-card:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(0,0,0,0.35); }
+.feature-icon { font-size: 20px; color: var(--primary); display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: rgba(99,102,241,.18); border: 1px solid rgba(99,102,241,.35); }
+
+/* How it works */
+.how-card { height: 100%; }
+
+/* Stats */
+.stat-card { text-align: center; }
+
+/* CTA */
+.cta-band { padding: 16px; border-left: 3px solid var(--primary); }
+@media (max-width: 768px) {
+  .cta-band { text-align: center; }
+}
+
+.section-title {
+  background: linear-gradient(90deg, var(--primary-2), var(--primary));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+.fade-in { animation: fadeIn 500ms ease forwards; opacity: 0; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+
+.slide-up { animation: slideUp 450ms ease forwards; opacity: 0; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px);} to { opacity: 1; transform: translateY(0);} }
+
+/* chat bubbles */
+.chat-card { padding: 12px; }
+.chat-bubble {
+  display: inline-block;
+  max-width: min(85%, 720px);
+  padding: 10px 14px;
+  border-radius: 14px;
+  margin: 6px 0;
+  line-height: 1.5;
+  animation: fadeIn 300ms ease;
+}
+.chat-bubble.ai {
+  background: rgba(99, 102, 241, 0.25);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #ffffff;
+}
+.chat-bubble.user {
+  background: rgba(167, 139, 250, 0.25);
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  color: #ffffff;
+}
+
+.timer-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 999px; margin-right: 6px;
+  background: radial-gradient(circle, var(--primary-2), var(--primary));
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{ transform: scale(1);} 50%{ transform: scale(1.4);} }
+
+/* responsive helpers */
+.container { width: 100%; max-width: 1200px; margin: 0 auto; padding-left: 12px; padding-right: 12px; }
+
+/* Make AntD tables wrap and avoid overflow */
+.ant-table-wrapper .ant-table-cell {
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Allow header actions to wrap on small screens */
+.app-header .ant-space {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .page-container { padding: 12px; }
+  .chat-card { max-height: 50vh; }
+}
+
+/* custom scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* AntD dark overrides for high contrast */
+.ant-layout, .ant-layout-header, .ant-layout-content { background: transparent !important; }
+.ant-card { background: var(--glass-bg) !important; border-color: var(--glass-border) !important; }
+.ant-typography, .ant-card, .ant-drawer, .ant-modal, .ant-table, .ant-input, .ant-form, .ant-upload, .ant-progress-text {
+  color: var(--text) !important;
+}
+.ant-input, .ant-input-affix-wrapper, .ant-select-selector, .ant-upload {
+  background: rgba(255,255,255,0.06) !important; color: var(--text) !important; border-color: var(--glass-border) !important;
+}
+.ant-input::placeholder { color: rgba(248,250,252,0.6) !important; }
+.ant-drawer-body, .ant-modal-content { background: rgba(20,24,40,0.95) !important; border: 1px solid var(--glass-border); }
+.ant-table { background: transparent !important; }
+.ant-table-thead > tr > th { background: rgba(255,255,255,0.06) !important; color: var(--text) !important; border-color: var(--glass-border) !important; }
+.ant-table-tbody > tr > td { background: transparent !important; color: var(--text) !important; border-color: var(--glass-border) !important; }
+.ant-table-tbody > tr.ant-table-row:hover > td { background: rgba(255,255,255,0.06) !important; }
+.ant-upload.ant-upload-drag { background: rgba(255,255,255,0.06) !important; border-color: var(--glass-border) !important; }
+.ant-progress-text { color: var(--text) !important; }
+
+/* Enhanced text contrast */
+.glass-card {
+  color: var(--text) !important;
+}
+
+.glass-card .ant-typography {
+  color: var(--text) !important;
+}
+
+.glass-card .ant-typography-secondary {
+  color: var(--muted) !important;
+}
+
+/* Ensure form labels and inputs have good contrast */
+.ant-form-item-label > label {
+  color: var(--text) !important;
+}
+
+.ant-input, .ant-input:focus {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: var(--text) !important;
+}
+
+.ant-input::placeholder {
+  color: var(--muted) !important;
+}

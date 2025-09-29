@@ -1,0 +1,227 @@
+import { Button, Card, Drawer, Grid, Input, Progress, Space, Table, Tag, Typography, Row, Col, Statistic, message } from 'antd'
+import { useEffect, useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { selectCandidates, selectAuth } from '../store'
+import { fetchAllInterviewsForInterviewer } from '../services/interviews'
+
+const { Title, Text, Paragraph } = Typography
+const { useBreakpoint } = Grid
+
+export default function Dashboard() {
+  const { list } = useSelector(selectCandidates)
+  const { profile: authProfile } = useSelector(selectAuth)
+  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState(null)
+  const [remote, setRemote] = useState(null) // null=not loaded, []=loaded
+  const screens = useBreakpoint()
+
+  const isInterviewer = authProfile?.user_type === 'interviewer'
+
+  useEffect(() => {
+    let ignore = false
+    if (isInterviewer) {
+      fetchAllInterviewsForInterviewer()
+        .then((rows) => {
+          if (ignore) return
+          // Normalize to match local candidate shape used in UI
+          const mapped = (rows || []).map((r) => ({
+            id: r.id,
+            name: r.name,
+            email: r.email,
+            phone: r.phone,
+            score: r.score,
+            summary: r.summary,
+            qa: Array.isArray(r.qa) ? r.qa : [],
+            updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : undefined,
+            chats: [],
+          }))
+          setRemote(mapped)
+        })
+        .catch((e) => {
+          message.error(e?.message || 'Failed to load interviews')
+          setRemote([])
+        })
+    } else {
+      setRemote(null)
+    }
+    return () => { ignore = true }
+  }, [isInterviewer])
+
+  const data = useMemo(() => {
+    const q = query.toLowerCase()
+    const base = Array.isArray(remote) ? remote : list
+    return [...base]
+      .filter((c) => !q || c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q))
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .map((c) => ({ key: c.id, ...c }))
+  }, [list, query, remote])
+
+  const columns = [
+    { title: 'Name', dataIndex: 'name', onCell: () => ({ style: { whiteSpace: 'normal', wordBreak: 'break-word' } }) },
+    { title: 'Email', dataIndex: 'email', responsive: ['sm'], width: 220, onCell: () => ({ style: { whiteSpace: 'normal', wordBreak: 'break-word' } }) },
+    { title: 'Phone', dataIndex: 'phone', responsive: ['md'], width: 160 },
+    { title: 'Score', dataIndex: 'score', width: 90, sorter: (a, b) => (a.score || 0) - (b.score || 0) },
+    { title: 'Updated', dataIndex: 'updatedAt', width: 180, render: (v) => (v ? new Date(v).toLocaleString() : '-'), responsive: ['lg'] },
+    { title: 'Action', width: 120, fixed: screens.lg ? undefined : 'right', render: (_, rec) => <Button onClick={() => setSelected(rec)}>View</Button> },
+  ]
+
+  const getDifficultyColor = (level) => {
+    switch (level?.toLowerCase()) {
+      case 'easy': return 'green'
+      case 'medium': return 'orange'
+      case 'hard': return 'red'
+      default: return 'default'
+    }
+  }
+
+  const getScoreColor = (score) => {
+    if (score >= 8) return '#52c41a' // green
+    if (score >= 6) return '#faad14' // orange
+    if (score >= 4) return '#fa8c16' // orange-red
+    return '#ff4d4f' // red
+  }
+
+  return (
+    <Space direction="vertical" style={{ width: '100%' }} className="dashboard-wrap">
+      <Title className="section-title" level={3}>Interviewer Dashboard</Title>
+
+      {/* Summary stats */}
+      <div className="glass-card fade-in" style={{ padding: 12 }}>
+        <Row gutter={[12, 12]}>
+          <Col xs={12} md={8}>
+            <Card className="glass-card" size="small">
+              <Statistic title={<Text type="secondary">Total Results</Text>} value={data.length} valueStyle={{ color: '#fff' }} />
+            </Card>
+          </Col>
+          <Col xs={12} md={8}>
+            <Card className="glass-card" size="small">
+              <Statistic
+                title={<Text type="secondary">Average Score</Text>}
+                value={useMemo(() => data.length ? Math.round((data.reduce((s, c) => s + (c.score || 0), 0) / data.length) * 10) / 10 : 0, [data])}
+                suffix="/60"
+                valueStyle={{ color: '#fff' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} md={8}>
+            <Card className="glass-card" size="small">
+              <Statistic
+                title={<Text type="secondary">Last Updated</Text>}
+                value={useMemo(() => {
+                  const ts = Math.max(...data.map((d) => d.updatedAt || 0), 0)
+                  return ts ? new Date(ts).toLocaleString() : '-'
+                }, [data])}
+                valueStyle={{ color: '#fff' }}
+              />
+            </Card>
+          </Col>
+        </Row>
+      </div>
+
+      {/* Search */}
+      <div className="glass-card" style={{ padding: 12 }}>
+        <Input.Search placeholder="Search by name or email" value={query} onChange={(e) => setQuery(e.target.value)} />
+      </div>
+
+      {/* Table */}
+      <div className="glass-card fade-in" style={{ padding: 12 }}>
+        <Table 
+          columns={columns} 
+          dataSource={data} 
+          pagination={{ pageSize: screens.md ? 10 : 6 }}
+          scroll={{ x: 900 }}
+        />
+      </div>
+
+      <Drawer title={selected?.name || 'Candidate'} width={screens.md ? 900 : '100%'} open={!!selected} onClose={() => setSelected(null)}>
+        {selected && (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Text>Email: {selected.email || '-'}</Text>
+            <Text>Phone: {selected.phone || '-'}</Text>
+            <Text strong>Final Score: {selected.score ?? '-'}</Text>
+            <Text>Summary: {selected.summary || '-'}</Text>
+
+            <Title level={4}>Per-question breakdown</Title>
+            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              {(selected.qa || []).map((q, i) => (
+                <Card
+                  key={q.id || i}
+                  className="glass-card"
+                  style={{ marginBottom: 0 }}
+                  size="small"
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Text strong style={{ fontSize: 16 }}>Q{i + 1}</Text>
+                      <Tag color={getDifficultyColor(q.level)}>
+                        {q.level?.toUpperCase()}
+                      </Tag>
+                      {q.timeTaken && (
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {q.timeTaken}s
+                        </Text>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Progress
+                          type="circle"
+                          size={40}
+                          percent={(q.score || 0) * 10}
+                          strokeColor={getScoreColor(q.score || 0)}
+                          format={() => `${q.score || 0}`}
+                        />
+                        <Text type="secondary" style={{ fontSize: 12 }}>/10</Text>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginBottom: 12 }}>
+                    <Text strong style={{ color: '#6366f1', fontSize: 13 }}>Question:</Text>
+                    <Paragraph style={{ margin: '4px 0 0 0', fontSize: 14 }}>
+                      {q.text}
+                    </Paragraph>
+                  </div>
+                  
+                  <div style={{ marginBottom: 12 }}>
+                    <Text strong style={{ color: '#10b981', fontSize: 13 }}>Answer:</Text>
+                    <Paragraph style={{ margin: '4px 0 0 0', fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>
+                      {q.answer || 'No answer provided'}
+                    </Paragraph>
+                  </div>
+                  
+                  {q.feedback && (
+                    <div style={{ 
+                      backgroundColor: 'rgba(255,255,255,0.03)', 
+                      padding: 12, 
+                      borderRadius: 8,
+                      borderLeft: `3px solid ${getScoreColor(q.score || 0)}`
+                    }}>
+                      <Text strong style={{ color: '#f59e0b', fontSize: 13 }}>AI Feedback:</Text>
+                      <Paragraph style={{ margin: '4px 0 0 0', fontSize: 14, color: 'rgba(255,255,255,0.75)' }}>
+                        {q.feedback}
+                      </Paragraph>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </Space>
+
+            <Title level={4}>Chat History</Title>
+            <div className="glass-card" style={{ maxHeight: 400, overflowY: 'auto', padding: 12 }}>
+              {(selected.chats || []).map((m, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: m.sender === 'user' ? 'flex-end' : 'flex-start' }}>
+                  <div className={`chat-bubble ${m.sender === 'user' ? 'user' : 'ai'}`}>
+                    <Text type={m.sender === 'ai' ? 'secondary' : undefined}>
+                      {m.sender === 'ai' ? 'AI: ' : 'Candidate: '} {m.text}
+                    </Text>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Space>
+        )}
+      </Drawer>
+    </Space>
+  )
+}

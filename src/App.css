@@ -1,0 +1,32 @@
+/* App-level decorative styles */
+.app-header {
+  background: linear-gradient(90deg, rgba(99,102,241,.35), rgba(167,139,250,.15));
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.header-title {
+  background: linear-gradient(90deg, #ffffff, #a78bfa);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 8px rgba(167,139,250,0.2));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: min(70vw, 720px);
+}
+
+.panel {
+  position: relative; z-index: 1;
+}
+.panel .inner { padding: 16px; }
+
+/* wrappers */
+.glass-panel { padding: 16px; }
+
+/* uploader */
+.uploader-card { transition: transform 200ms ease, box-shadow 200ms ease; }
+.uploader-card:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(0,0,0,0.35); }
+
+/* dashboard */
+.dashboard-wrap { gap: 12px; display: flex; flex-direction: column; }
+
+@media (max-width: 768px) {
+  .glass-panel { padding: 8px; }
+  .header-title { max-width: 60vw; font-size: 18px !important; }
+}
