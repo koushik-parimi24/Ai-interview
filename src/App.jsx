@@ -9,7 +9,7 @@ import InterviewerPage from './pages/Interviewer'
 import Footer from './components/Footer'
 import './App.css'
 import { Button, Space, Dropdown } from 'antd'
-import { SettingOutlined, MenuOutlined, LoginOutlined, LogoutOutlined, TeamOutlined, SolutionOutlined } from '@ant-design/icons'
+import { MenuOutlined, LoginOutlined, LogoutOutlined, TeamOutlined, SolutionOutlined } from '@ant-design/icons'
 import SettingsModal from './components/SettingsModal'
 import LoginPage from './pages/Login'
 import SignupPage from './pages/Signup'
@@ -83,14 +83,13 @@ return (
         <Layout style={{ minHeight: '100vh' }}>
           <Header className="app-header" style={{ color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <Title level={3} className="header-title" style={{ margin: 0, lineHeight: 1 }}>
-              <a onClick={() => navigate('/')}>AI-Powered Interview Assistant</a>
+              <a onClick={() => navigate('/')}>AI-Interview Assistant</a>
             </Title>
 
-            {screens.lg ? (
+            {screens.md ? (
               <Space className="right-actions">
                 <Link to="/interviewee"><Button icon={<SolutionOutlined />}>Interviewee</Button></Link>
                 <Link to="/interviewer"><Button icon={<TeamOutlined />}>Interviewer</Button></Link>
-                <Button icon={<SettingOutlined />} onClick={() => setSettingsOpen(true)}>Settings</Button>
                 {!user ? (
                   <>
                     <Link to="/login"><Button icon={<LoginOutlined />}>Log in</Button></Link>
@@ -127,7 +126,6 @@ return (
                 onClick={({ key }) => {
                   if (key === 'interviewee') navigate('/interviewee')
                   if (key === 'interviewer') navigate('/interviewer')
-                  if (key === 'settings') setSettingsOpen(true)
                   if (key === 'login') navigate('/login')
                   if (key === 'signup') navigate('/signup')
                   if (key === 'logout') dispatch(logout())
@@ -136,7 +134,6 @@ return (
                 items={[
                   { key: 'interviewee', icon: <SolutionOutlined />, label: 'Interviewee' },
                   { key: 'interviewer', icon: <TeamOutlined />, label: 'Interviewer' },
-                  { key: 'settings', icon: <SettingOutlined />, label: 'Settings' },
                   ...(user ? [
                     { type: 'divider' },
                     { key: 'logout', icon: <LogoutOutlined />, label: 'Log out' },
