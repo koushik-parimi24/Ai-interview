@@ -3,6 +3,13 @@ import { v4 as uuidv4 } from 'uuid'
 // OpenRouter integration with local fallbacks
 const ENV_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
 const ENV_MODEL = import.meta.env.VITE_OPENROUTER_MODEL
+
+// Azure OpenAI integration
+const AZURE_ENDPOINT = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT
+const AZURE_KEY = import.meta.env.VITE_AZURE_OPENAI_KEY
+const AZURE_DEPLOYMENT = import.meta.env.VITE_AZURE_OPENAI_DEPLOYMENT
+const AZURE_API_VERSION = import.meta.env.VITE_AZURE_OPENAI_API_VERSION || '2024-12-01-preview'
+
 const APP_TITLE = 'AI Interview Assistant'
 
 function getOpenRouterApiKey() {
@@ -84,6 +91,59 @@ async function callOpenRouter(messages, responseFormat) {
   return content
 }
 
+// Azure OpenAI functions
+function getAzureOpenAIConfig() {
+  if (typeof window !== 'undefined') {
+    const endpoint = window.localStorage?.getItem('azure_openai_endpoint') || AZURE_ENDPOINT
+    const key = window.localStorage?.getItem('azure_openai_key') || AZURE_KEY
+    const deployment = window.localStorage?.getItem('azure_openai_deployment') || AZURE_DEPLOYMENT
+    return { endpoint, key, deployment }
+  }
+  return { endpoint: AZURE_ENDPOINT, key: AZURE_KEY, deployment: AZURE_DEPLOYMENT }
+}
+
+function hasAzureOpenAI() {
+  const { endpoint, key, deployment } = getAzureOpenAIConfig()
+  return !!(endpoint && key && deployment)
+}
+
+async function callAzureOpenAI(messages, responseFormat) {
+  const { endpoint, key, deployment } = getAzureOpenAIConfig()
+  if (!endpoint || !key || !deployment) throw new Error('Missing Azure OpenAI configuration')
+  
+  console.log('🔵 Using Azure OpenAI:', deployment)
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'api-key': key
+  }
+  
+  const body = {
+    messages,
+    max_tokens: 1000,
+    temperature: 0.7,
+    stream: false
+  }
+  if (responseFormat) body.response_format = responseFormat
+  
+  const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${AZURE_API_VERSION}`
+  
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  })
+  
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '')
+    throw new Error(`Azure OpenAI error ${res.status}: ${errorText}`)
+  }
+  
+  const data = await res.json()
+  const content = data?.choices?.[0]?.message?.content || ''
+  return content
+}
+
 export const generateQuestionSetLocal = () => {
   const set = [
     { id: uuidv4(), level: 'easy', kind: 'text', text: pick(EASY_QUESTIONS) },
@@ -96,7 +156,7 @@ export const generateQuestionSetLocal = () => {
   return set
 }
 
-export async function generateQuestionSetAI(profile = {}) {
+export async function generateQuestionSetAI(profile = {}, apiCaller = callOpenRouter) {
   const sys = {
     role: 'system',
     content:
@@ -106,7 +166,7 @@ EASY (2 questions): Quick recall questions designed to be answered optimally in 
 
 MEDIUM (2 questions): Explanation questions that can be thoroughly answered in 60 seconds. Should require 2-3 sentences explaining concepts, differences, or simple examples. Focus on React hooks, Node.js concepts, or explaining how something works.
 
-HARD (2 questions): Code implementation tasks that can be completed in 120 seconds (2 minutes). Should be concise coding problems - small functions, simple algorithms, or short React components. Avoid complex multi-step problems.
+HARD (2 questions): Code implementation tasks that can be completed in 300 seconds (5 minutes). Should be concise coding problems - small functions, simple algorithms, or short React components. Avoid complex multi-step problems.
 
 Examples:
 - Easy: "Which React hook manages state?" 
@@ -120,7 +180,7 @@ Return STRICT JSON array with items of the form {"level":"easy|medium|hard","tex
     content: `Candidate: ${profile.name || 'N/A'} (${profile.email || ''}). Focus on React and Node. Generate time-appropriate questions. Output JSON only.`,
   }
   try {
-    const content = await callOpenRouter([sys, usr])
+    const content = await apiCaller([sys, usr])
     const firstBracket = content.indexOf('[')
     const lastBracket = content.lastIndexOf(']')
     const jsonStr = firstBracket >= 0 ? content.slice(firstBracket, lastBracket + 1) : content
@@ -135,7 +195,26 @@ Return STRICT JSON array with items of the form {"level":"easy|medium|hard","tex
 }
 
 export const getQuestionSet = async (profile) => {
-  if (getOpenRouterApiKey()) return await generateQuestionSetAI(profile)
+  // Priority: Azure OpenAI > OpenRouter > Local
+  if (hasAzureOpenAI()) {
+    try {
+      console.log('🔵 Trying Azure OpenAI for question generation')
+      return await generateQuestionSetAI(profile, callAzureOpenAI)
+    } catch (e) {
+      console.warn('Azure OpenAI failed, trying OpenRouter:', e)
+    }
+  }
+  
+  if (getOpenRouterApiKey()) {
+    try {
+      console.log('🟡 Trying OpenRouter for question generation')
+      return await generateQuestionSetAI(profile, callOpenRouter)
+    } catch (e) {
+      console.warn('OpenRouter failed, using local:', e)
+    }
+  }
+  
+  console.log('⚪ Using local question generation')
   return generateQuestionSetLocal()
 }
 
@@ -204,11 +283,11 @@ export const evaluateAnswerLocal = (question, answer) => {
   return { score, feedback: 'Heuristic score based on length and keywords.' }
 }
 
-export async function evaluateAnswerAI(question, answer) {
+export async function evaluateAnswerAI(question, answer, apiCaller = null) {
   const timeConstraints = {
     easy: '30 seconds',
     medium: '60 seconds', 
-    hard: '120 seconds'
+    hard: '300 seconds (5 minutes)'
   }
   
   const base = 'Return STRICT JSON: {"score":0-10,"feedback":"short justification"}. If the answer/code is empty, whitespace, not runnable, or non-responsive, the score MUST be 0. No commentary.'
@@ -222,8 +301,12 @@ export async function evaluateAnswerAI(question, answer) {
   const usr = { role: 'user', content: question.kind === 'code'
     ? `Problem (difficulty: ${question.level}, time limit: ${timeConstraints[question.level]}): ${question.text}\nCandidate Code (JavaScript):\n\n${answer || ''}\n\nEvaluate considering the time constraint. ${question.level === 'easy' ? easyClause : ''}`
     : `Question (difficulty: ${question.level}, time limit: ${timeConstraints[question.level]}): ${question.text}\nAnswer: ${answer || ''}\n\nEvaluate considering the time constraint. ${question.level === 'easy' ? easyClause : ''}` }
+  
+  // Determine which API caller to use
+  const caller = apiCaller || (hasAzureOpenAI() ? callAzureOpenAI : callOpenRouter)
+  
   try {
-    const content = await callOpenRouter([sys, usr])
+    const content = await caller([sys, usr])
     const first = content.indexOf('{')
     const last = content.lastIndexOf('}')
     const jsonStr = first >= 0 ? content.slice(first, last + 1) : content
@@ -241,7 +324,27 @@ export async function evaluateAnswerAI(question, answer) {
 
 export const scoreAnswer = async (question, answer) => {
   if (!answer || !String(answer).trim()) return { score: 0, feedback: 'No answer provided.' }
-  if (getOpenRouterApiKey()) return await evaluateAnswerAI(question, answer)
+  
+  // Priority: Azure OpenAI > OpenRouter > Local
+  if (hasAzureOpenAI()) {
+    try {
+      console.log('🔵 Using Azure OpenAI for scoring')
+      return await evaluateAnswerAI(question, answer, callAzureOpenAI)
+    } catch (e) {
+      console.warn('Azure OpenAI scoring failed, trying OpenRouter:', e)
+    }
+  }
+  
+  if (getOpenRouterApiKey()) {
+    try {
+      console.log('🟡 Using OpenRouter for scoring')
+      return await evaluateAnswerAI(question, answer, callOpenRouter)
+    } catch (e) {
+      console.warn('OpenRouter scoring failed, using local:', e)
+    }
+  }
+  
+  console.log('⚪ Using local scoring')
   return evaluateAnswerLocal(question, answer)
 }
 
