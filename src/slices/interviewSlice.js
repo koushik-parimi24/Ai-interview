@@ -4,10 +4,10 @@ import { createSlice } from '@reduxjs/toolkit'
 export const DIFFICULTY_FLOW = [
   { level: 'easy', seconds: 30 },
   { level: 'easy', seconds: 30 },
-  { level: 'medium', seconds: 60 },
-  { level: 'medium', seconds: 60 },
-  { level: 'hard', seconds: 120 },
-  { level: 'hard', seconds: 120 },
+  { level: 'medium', seconds: 120 },
+  { level: 'medium', seconds: 120 },
+  { level: 'hard', seconds: 300 },
+  { level: 'hard', seconds: 300 },
 ]
 
 const initialState = {
