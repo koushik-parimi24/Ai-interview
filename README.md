@@ -10,7 +10,7 @@ Dual Role System: Separate interfaces for interviewers and interviewees.
 
 Timed Interviews: 6-question format (2 easy, 2 medium, 2 hard) with time constraints.
 
-Real-time AI Scoring: Instant feedback and scoring using the OpenRouter API.
+Real-time AI Scoring: Instant feedback and scoring using Azure OpenAI (preferred) or OpenRouter.
 
 Resume Processing: Upload and parse PDF/DOCX resumes for context-aware questions.
 
@@ -19,7 +19,7 @@ Session Management: Persistent interview sessions with recovery capability.
 🤖 AI-Powered Features
 Smart Question Generation: Context-aware questions based on candidate profiles.
 
-Adaptive Difficulty: Time-appropriate questions (30s easy, 60s medium, 120s hard).
+Adaptive Difficulty: Time-appropriate questions (30s easy, 60s medium, 300s hard).
 
 Intelligent Scoring: AI evaluation with detailed feedback.
 
@@ -63,7 +63,9 @@ Row Level Security (RLS) - Secure data access policies.
 Real-time subscriptions - Live data updates.
 
 AI Integration
-OpenRouter API - Access to multiple AI models.
+Azure OpenAI (preferred) - Uses your Azure endpoint/deployment for question generation and scoring when configured.
+
+OpenRouter (fallback) - Used when Azure OpenAI is not configured.
 
 Context-aware prompting - Tailored questions and scoring.
 
@@ -84,7 +86,9 @@ npm or yarn
 
 Supabase account
 
-OpenRouter API key (recommended)
+Azure OpenAI resource and deployment (recommended)
+
+Optional: OpenRouter API key
 
 Installation
 Clone the repository
@@ -107,7 +111,14 @@ Bash
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# OpenRouter AI (Recommended)
+# Azure OpenAI (Preferred)
+VITE_AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
+VITE_AZURE_OPENAI_KEY=your_azure_openai_key
+VITE_AZURE_OPENAI_DEPLOYMENT=your_deployment_name
+# Optional (defaults to 2024-12-01-preview in code)
+VITE_AZURE_OPENAI_API_VERSION=2024-12-01-preview
+
+# OpenRouter AI (Optional)
 VITE_OPENROUTER_API_KEY=sk-or-your-api-key
 VITE_OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
 Database Setup
@@ -122,7 +133,14 @@ Open Application
 Navigate to http://localhost:5173
 
 🔧 Configuration
-AI Setup (OpenRouter)
+AI Setup (Azure OpenAI)
+Create an Azure OpenAI resource and deploy a chat/completions-capable model.
+
+Grab your endpoint URL, API key, and deployment name.
+
+Set VITE_AZURE_OPENAI_ENDPOINT, VITE_AZURE_OPENAI_KEY, VITE_AZURE_OPENAI_DEPLOYMENT (and optionally VITE_AZURE_OPENAI_API_VERSION) in .env.local.
+
+AI Setup (OpenRouter, optional)
 Create an account at OpenRouter.ai
 
 Generate an API key
@@ -175,7 +193,7 @@ Easy Questions (30s): Quick recall, basic concepts.
 
 Medium Questions (60s): Explanations, practical knowledge.
 
-Hard Questions (120s): Code implementation, problem-solving.
+Hard Questions (300s / 5m): Code implementation, problem-solving.
 
 🔒 Security Features
 Row Level Security: Database-level access control.

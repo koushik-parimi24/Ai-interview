@@ -160,20 +160,33 @@ export async function generateQuestionSetAI(profile = {}, apiCaller = callOpenRo
   const sys = {
     role: 'system',
     content:
-`You are a technical interviewer for a Full Stack (java) role. Generate exactly 6 interview questions with specific time constraints:
+`You are an expert interviewer for a modern JavaScript Full‑Stack role (React + Node.js + Express).
+Generate exactly 6 interview questions with clear time constraints and strong topical diversity.
 
-EASY (2 questions): Quick recall questions designed to be answered optimally in 1-5 words within 30 seconds. Focus on basic concepts, syntax, or definitions that have short, direct answers.
+Difficulty and format
+- EASY (2): Short recall questions answerable in 1–5 words within 30 seconds.
+  • One must be React focused.
+  • One must be Node.js/Express focused.
+- MEDIUM (2): 60‑second explanation or reasoning questions in 2–3 sentences.
+  • Include one "compare/why" style question (e.g., differences, trade‑offs, when to use X vs Y).
+  • Include one debugging/troubleshooting scenario describing a symptom to diagnose or fix.
+- HARD (2): Self‑contained coding tasks doable in ~5 minutes (300s).
+  • One must target React (component, hook usage, state/effects, context, forms, performance).
+  • One must target Node.js/Express (middleware, routing, async/streams, validation, security, performance).
+  • Keep tasks concise; avoid multi‑file setups, external services, or lengthy boilerplate.
 
-MEDIUM (2 questions): Explanation questions that can be thoroughly answered in 60 seconds. Should require 2-3 sentences explaining concepts, differences, or simple examples. Focus on React hooks, Node.js concepts, or explaining how something works.
+Diversity and coverage rules (must follow all)
+- No two questions may cover the exact same subtopic; vary wording and verbs (explain, implement, debug, optimize, refactor).
+- Across the set, cover a mix from:
+  • React: hooks (useState/useEffect/useMemo/useCallback), state mgmt, rendering/performance, context, routing, forms.
+  • Node.js: event loop & concurrency, async patterns (callbacks/promises/async‑await), streams/buffers, modules, error handling.
+  • Express: routing, middleware, validation, auth, security headers, rate limiting, performance.
+- Include at least one security or performance angle somewhere in the set.
+- Be specific and concrete; avoid generic or repetitive prompts.
 
-HARD (2 questions): Code implementation tasks that can be completed in 300 seconds (5 minutes). Should be concise coding problems - small functions, simple algorithms, or short React components. Avoid complex multi-step problems.
-
-Examples:
-- Easy: "Which React hook manages state?" 
-- Medium: "Explain the difference between useEffect and useState with a simple example."
-- Hard: "Write a React component that displays a counter with increment/decrement buttons."
-
-Return STRICT JSON array with items of the form {"level":"easy|medium|hard","text":"..."}. No extra commentary.`
+Output strictly a JSON array of length 6. Each item must be of the form:
+{"level":"easy|medium|hard","text":"<the question>"}
+No extra commentary, no markdown, no keys other than level and text.`
   }
   const usr = {
     role: 'user',
