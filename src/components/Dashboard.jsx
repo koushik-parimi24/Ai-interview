@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { selectCandidates, selectAuth } from '../store'
 import { fetchAllInterviewsForInterviewer, deleteInterview } from '../services/interviews'
+import { getResumeSignedUrl } from '../services/storage'
 
 const { Title, Text, Paragraph } = Typography
 const { useBreakpoint } = Grid
@@ -37,8 +38,6 @@ function ResumePanel({ selected }) {
       if (!selected?.resumePath) return
       try {
         setLoadingResume(true)
-        // Lazy import to avoid circulars at top level
-        const { getResumeSignedUrl } = await import('../services/storage')
         const url = await getResumeSignedUrl(selected.resumePath, 600)
         if (!ignore) setSignedUrl(url)
       } catch (e) {
