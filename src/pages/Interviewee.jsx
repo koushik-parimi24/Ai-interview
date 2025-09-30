@@ -66,7 +66,14 @@ export default function IntervieweePage() {
               <>
                 <Title className="section-title" level={4}>Upload Resume</Title>
                 <ResumeUploader onParsed={(data) => {
-                  startNew({ name: data.name || '', email: data.email || '', phone: data.phone || '' })
+                  startNew({ 
+                    name: data.name || '', 
+                    email: data.email || '', 
+                    phone: data.phone || '',
+                    resumePath: data.resumePath || null,
+                    resumeFilename: data.filename || null,
+                    resumeMimeType: data.mimeType || null,
+                  })
                 }} />
               </>
             ) : (

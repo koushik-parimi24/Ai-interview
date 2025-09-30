@@ -1,6 +1,8 @@
 import { Upload, message, Typography } from 'antd'
 import { InboxOutlined } from '@ant-design/icons'
 import { parsePDF, parseDOCX } from '../utils/resumeParser'
+import { supabase } from '../lib/supabaseClient'
+import { uploadResumeFile } from '../services/storage'
 
 const { Dragger } = Upload
 const { Text } = Typography
@@ -13,19 +15,32 @@ export default function ResumeUploader({ onParsed }) {
     customRequest: async ({ file, onSuccess, onError }) => {
       try {
         let data
-        if (file.type === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf')) {
+        const isPDF = file.type === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf')
+        const isDOCX = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name?.toLowerCase().endsWith('.docx')
+        if (isPDF) {
           data = await parsePDF(file)
-        } else if (
-          file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-          file.name?.toLowerCase().endsWith('.docx')
-        ) {
+        } else if (isDOCX) {
           data = await parseDOCX(file)
         } else {
           message.error('Unsupported file type. Please upload PDF or DOCX.')
           onError?.(new Error('Unsupported file'))
           return
         }
-        onParsed?.({ ...data, filename: file.name })
+
+        // Attempt upload to Supabase Storage (bucket: resumes). If bucket not present or RLS blocks, fall back gracefully.
+        let resumePath = null
+        try {
+          const { data: userData } = await supabase.auth.getUser()
+          const uid = userData?.user?.id
+          if (!uid) throw new Error('Not authenticated')
+          const out = await uploadResumeFile(file, uid, file.name)
+          resumePath = out.path
+        } catch (e) {
+          console.warn('Resume upload skipped/failure:', e?.message || e)
+          message.warning('Resume file not stored (storage not configured). Parsed details will still be used.')
+        }
+
+        onParsed?.({ ...data, filename: file.name, mimeType: file.type, resumePath })
         message.success('Resume parsed successfully')
         onSuccess?.({}, file)
       } catch (e) {
@@ -46,7 +61,7 @@ export default function ResumeUploader({ onParsed }) {
       <p className="ant-upload-hint">
         Supported: PDF (required) and DOCX (optional). We will extract Name, Email, Phone.
       </p>
-      <Text type="secondary">We only process the file locally in your browser.</Text>
+      <Text type="secondary">If storage is configured, the file is uploaded securely to Supabase.</Text>
     </Dragger>
   )
 }
