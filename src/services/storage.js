@@ -27,3 +27,10 @@ export async function getResumeSignedUrl(path, ttlSecs = 600) {
   if (error) throw error
   return data?.signedUrl
 }
+
+// Delete a stored resume file (best-effort)
+export async function deleteResume(path) {
+  if (!path) return
+  const { error } = await supabase.storage.from(BUCKET).remove([path])
+  if (error) throw error
+}

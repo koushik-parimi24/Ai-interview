@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient'
+import { deleteResume } from './storage'
 
 export async function saveInterviewResult({ profile, qa, score, summary }) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -38,4 +39,14 @@ export async function fetchAllInterviewsForInterviewer() {
     .order('updated_at', { ascending: false })
   if (error) throw error
   return data || []
+}
+
+export async function deleteInterview({ id, resumePath }) {
+  if (!id) throw new Error('Missing interview id')
+  // Best-effort: try deleting resume first (ignore errors so row can still be removed)
+  if (resumePath) {
+    try { await deleteResume(resumePath) } catch (e) { /* ignore */ }
+  }
+  const { error } = await supabase.from('interviews').delete().eq('id', id)
+  if (error) throw error
 }

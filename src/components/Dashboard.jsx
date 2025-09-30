@@ -1,8 +1,8 @@
-import { Button, Card, Drawer, Grid, Input, Progress, Space, Table, Tag, Typography, Row, Col, Statistic, message } from 'antd'
+import { Button, Card, Drawer, Grid, Input, Progress, Space, Table, Tag, Typography, Row, Col, Statistic, message, Popconfirm } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { selectCandidates, selectAuth } from '../store'
-import { fetchAllInterviewsForInterviewer } from '../services/interviews'
+import { fetchAllInterviewsForInterviewer, deleteInterview } from '../services/interviews'
 
 const { Title, Text, Paragraph } = Typography
 const { useBreakpoint } = Grid
@@ -173,6 +173,7 @@ export default function Dashboard() {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(null)
   const [remote, setRemote] = useState(null) // null=not loaded, []=loaded
+  const [deleting, setDeleting] = useState({})
   const screens = useBreakpoint()
 
   const isInterviewer = authProfile?.user_type === 'interviewer'
@@ -217,13 +218,39 @@ export default function Dashboard() {
       .map((c) => ({ key: c.id, ...c }))
   }, [list, query, remote])
 
+  const handleDelete = async (rec) => {
+    setDeleting((d) => ({ ...d, [rec.id]: true }))
+    try {
+      await deleteInterview({ id: rec.id, resumePath: rec.resumePath })
+      // Remove from current view
+      setRemote((cur) => Array.isArray(cur) ? cur.filter((r) => r.id !== rec.id) : cur)
+      message.success('Candidate deleted')
+    } catch (e) {
+      message.error(e?.message || 'Failed to delete candidate')
+    } finally {
+      setDeleting((d) => ({ ...d, [rec.id]: false }))
+    }
+  }
+
   const columns = [
     { title: 'Name', dataIndex: 'name', onCell: () => ({ style: { whiteSpace: 'normal', wordBreak: 'break-word' } }) },
     { title: 'Email', dataIndex: 'email', responsive: ['sm'], width: 220, onCell: () => ({ style: { whiteSpace: 'normal', wordBreak: 'break-word' } }) },
     { title: 'Phone', dataIndex: 'phone', responsive: ['md'], width: 160 },
     { title: 'Score', dataIndex: 'score', width: 90, sorter: (a, b) => (a.score || 0) - (b.score || 0) },
     { title: 'Updated', dataIndex: 'updatedAt', width: 180, render: (v) => (v ? new Date(v).toLocaleString() : '-'), responsive: ['lg'] },
-    { title: 'Action', width: 120, fixed: screens.lg ? undefined : 'right', render: (_, rec) => <Button onClick={() => setSelected(rec)}>View</Button> },
+    { title: 'Action', width: 180, fixed: screens.lg ? undefined : 'right', render: (_, rec) => (
+        <Space>
+          <Button size="small" onClick={() => setSelected(rec)}>View</Button>
+          <Popconfirm
+            title="Delete this candidate?"
+            okText="Delete"
+            okType="danger"
+            onConfirm={() => handleDelete(rec)}
+          >
+            <Button type="primary" danger size="small" loading={!!deleting[rec.id]}>Delete</Button>
+          </Popconfirm>
+        </Space>
+      ) },
   ]
 
 
