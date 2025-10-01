@@ -1,214 +1,154 @@
-AI-Powered Interview Assistant
-🚀 A comprehensive, modern interview platform built with React that leverages AI to conduct technical interviews with real-time scoring and candidate management. This application provides a complete interview solution for technical hiring, featuring dual interfaces for interviewers and interviewees, AI-powered question generation, and automated scoring. Perfect for companies looking to streamline their technical interview process.
+An AI-powered technical interview platform that automates the entire interview process — from generating context-aware questions to evaluating candidate answers in real time.
 
-📋 Overview
-This application provides a complete interview solution for technical hiring, featuring dual interfaces for interviewers and interviewees, AI-powered question generation, and automated scoring. Perfect for companies looking to streamline their technical interview process.
+Built with React + Vite, Supabase, and Azure OpenAI / OpenRouter, this platform allows interviewers to host timed interviews and get instant AI-based evaluations.
 
-✨ Key Features
-🎯 Core Functionality
-Dual Role System: Separate interfaces for interviewers and interviewees.
+🚀 Features
 
-Timed Interviews: 6-question format (2 easy, 2 medium, 2 hard) with time constraints.
+✅ AI-Generated Questions
 
+6 questions per interview (2 Easy, 2 Medium, 2 Hard)
 
-Real-time AI Scoring: Instant feedback and scoring using Azure OpenAI (preferred) or OpenRouter.
-Real-time AI Scoring: Instant feedback and scoring using the OpenRouter API and Azure OpenAI.
+Context-aware question generation using resume parsing
 
-Resume Processing: Upload and parse PDF/DOCX resumes for context-aware questions.
+📝 Resume Parsing
 
-Session Management: Persistent interview sessions with recovery capability.
+Extracts information from PDF/DOCX resumes to personalize questions
 
-🤖 AI-Powered Features
-Smart Question Generation: Context-aware questions based on candidate profiles.
+⏱️ Timed Interviews
 
-Adaptive Difficulty: Time-appropriate questions (30s easy, 60s medium, 300s hard).
+Auto timer for each question (30s / 60s / 5min)
 
-Intelligent Scoring: AI evaluation with detailed feedback.
+Automatic submission on timeout
 
-Candidate Summarization: Automated interview summaries and recommendations.
+💬 AI Evaluation & Feedback
 
-👥 User Management
-Role-Based Authentication: Secure login with interviewer/interviewee roles.
+Real-time answer analysis using Azure OpenAI
 
-Profile Management: User profiles with role persistence.
+Fallback to OpenRouter if Azure is unavailable
 
-Session Recovery: Resume interrupted interviews.
+🔄 Session Persistence
 
-Analytics Dashboard: Candidate performance tracking.
+Auto-saves progress so candidates can resume interrupted interviews
 
-🎨 User Experience
-Modern UI: Built with Ant Design for a professional appearance.
+👥 Role-Based Access
 
-Responsive Design: Works on desktop and mobile devices.
+Separate interfaces for Interviewers and Interviewees
 
-Dark Theme: Eye-friendly dark mode interface.
+📊 Interviewer Dashboard
 
-Real-time Updates: Live interview progress and scoring.
+View candidates, performance scores, and analytics
 
-🛠️ Tech Stack
-Frontend
-React 19: Modern React with the latest features.
+🧰 Tech Stack
+Layer	Technology
+Frontend	React (Vite), Redux Toolkit, Ant Design
+Backend (BaaS)	Supabase (PostgreSQL + RLS + Realtime)
+AI	Azure OpenAI API / OpenRouter API
+Parsing	pdfjs-dist (PDF), mammoth (DOCX)
+Hosting	Vercel / Netlify (Recommended)
+📂 Project Structure
+AI-Interview/
+├── public/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── hooks/
+│   ├── redux/
+│   ├── utils/
+│   └── main.jsx
+├── .env.local.example
+├── package.json
+├── vite.config.js
+└── README.md
 
-Vite: Fast build tool and development server.
+⚡ Getting Started
+1. Clone the Repository
+git clone https://github.com/koushik-parimi24/Ai-interview.git
+cd Ai-interview
 
-Redux Toolkit: State management with RTK Query.
-
-Ant Design: Professional UI component library.
-
-React Router: Client-side routing with protected routes.
-
-Backend & Database
-Supabase: Backend-as-a-Service with PostgreSQL.
-
-Row Level Security (RLS): Secure data access policies.
-
-Real-time subscriptions: Live data updates.
-
-AI Integration
-<<<<<<< HEAD
-Azure OpenAI (preferred) - Uses your Azure endpoint/deployment for question generation and scoring when configured.
-
-OpenRouter (fallback) - Used when Azure OpenAI is not configured.
-=======
-OpenRouter API: Access to multiple AI models.
->>>>>>> 36a52780f839c1778483020c1a484165f7f13446
-
-Azure OpenAI: For robust and scalable AI-powered features.
-
-Context-aware prompting: Tailored questions and scoring.
-
-Fallback systems: Local question banks when AI is unavailable.
-
-Document Processing
-pdfjs-dist: PDF resume parsing.
-
-mammoth: DOCX document processing.
-
-File upload handling: Secure document management.
-
-🚀 Quick Start
-Prerequisites
-Node.js 18+
-
-npm or yarn
-
-Supabase account
-
-Azure OpenAI resource and deployment (recommended)
-
-Optional: OpenRouter API key
-
-Azure OpenAI account and API key
-
-Installation
-Clone the repository:
-
-Bash
-
-git clone <repository-url>
-cd interview_assistant1
-Install dependencies:
-
-Bash
-
+2. Install Dependencies
 npm install
-Environment Setup
-Create a .env.local file and add the following:
 
-# Supabase Configuration
+3. Set up Environment Variables
+
+Create a .env.local file in the project root with the following keys:
+
+# Supabase
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Azure OpenAI (Preferred)
-VITE_AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
+# Azure OpenAI
 VITE_AZURE_OPENAI_KEY=your_azure_openai_key
-VITE_AZURE_OPENAI_DEPLOYMENT=your_deployment_name
-# Optional (defaults to 2024-12-01-preview in code)
-VITE_AZURE_OPENAI_API_VERSION=2024-12-01-preview
+VITE_AZURE_OPENAI_ENDPOINT=your_azure_endpoint
+VITE_AZURE_OPENAI_DEPLOYMENT_NAME=your_deployment_name
+VITE_AZURE_OPENAI_API_VERSION=2024-02-01
 
-# OpenRouter AI (Optional)
-VITE_OPENROUTER_API_KEY=sk-or-your-api-key
-VITE_OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
+# OpenRouter (optional fallback)
+VITE_OPENROUTER_API_KEY=your_openrouter_key
 
-# Azure OpenAI Configuration
-VITE_AZURE_OPENAI_ENDPOINT=your_azure_openai_endpoint
-VITE_AZURE_OPENAI_KEY=your_azure_openai_key
-VITE_AZURE_OPENAI_DEPLOYMENT=your_deployment_name
-VITE_AZURE_OPENAI_API_VERSION=your_api_version
-Database Setup
-Run the SQL scripts in your Supabase dashboard to create tables and triggers.
 
-Start Development Server
-Bash
+⚠️ Never commit your .env.local file to version control.
 
+4. Run the Development Server
 npm run dev
-Open your browser and navigate to http://localhost:5173.
 
-🔧 Configuration
-<<<<<<< HEAD
-AI Setup (Azure OpenAI)
-Create an Azure OpenAI resource and deploy a chat/completions-capable model.
 
-Grab your endpoint URL, API key, and deployment name.
+Visit http://localhost:5173
+ to open the app.
 
-Set VITE_AZURE_OPENAI_ENDPOINT, VITE_AZURE_OPENAI_KEY, VITE_AZURE_OPENAI_DEPLOYMENT (and optionally VITE_AZURE_OPENAI_API_VERSION) in .env.local.
+🧠 AI Configuration
 
-AI Setup (OpenRouter, optional)
-Create an account at OpenRouter.ai
-=======
-AI Setup (OpenRouter & Azure OpenAI)
-Create an account at OpenRouter.ai and/or Azure OpenAI.
->>>>>>> 36a52780f839c1778483020c1a484165f7f13446
+Primary: Azure OpenAI
+Used for generating and evaluating questions in real time.
 
-Generate API keys.
+Fallback: OpenRouter
+Automatically used when Azure API is unavailable.
 
-Add them to your environment variables.
+Offline: Local Question Bank
+(Optional) Provide static questions if both APIs are down.
 
-Choose a model (free options are available on OpenRouter).
+📝 Supabase Database Setup
 
-Supabase Setup
-Create a new Supabase project.
+Create a new Supabase project
 
-Set up authentication with email confirmation.
+Import the provided SQL schema (/supabase/schema.sql) to create required tables
 
-Create a profiles table with RLS policies.
+Enable Row-Level Security and configure policies for:
 
-Configure triggers for automatic profile creation.
+Candidates
 
-Role Configuration
-Interviewer: Access to candidate management and analytics.
+Interviews
 
-Interviewee: Access to the interview interface and chat.
+Responses
 
-📊 Interview Flow
-For Interviewees
-Sign up and verify your email.
+🧪 Testing
 
-Upload your resume (optional).
+Mock AI endpoints for testing evaluation flow
 
-Start the timed interview.
+Run local interviews to verify:
 
-Answer 6 questions with time limits.
+Timer behavior
 
-Receive instant AI feedback.
+Resume session functionality
 
-View your final score and a summary.
+Real-time scoring
 
-For Interviewers
-Access the candidate dashboard.
+📦 Deployment
+Deploy on Vercel
 
-Review interview sessions.
+Push your repo to GitHub
 
-View AI-generated summaries.
+Import it in Vercel
 
-Analyze candidate performance.
+Add all .env variables in the Vercel dashboard
 
-Make hiring decisions.
+Deploy 🚀
 
-🎯 Question Types & Timing
-Easy Questions (30s): Quick recall, basic concepts.
+Deploy on Netlify
 
-Medium Questions (60s): Explanations, practical knowledge.
+Link repo in Netlify
 
-Hard Questions (300s / 5m): Code implementation, problem-solving.
+Set environment variables
 
+Build command: npm run build
+
+Publish directory: dist
