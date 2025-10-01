@@ -42,10 +42,6 @@ export default function CodeEditor({ language = 'javascript', value, onChange, o
           }}
         />
       </div>
-      <Space style={{ marginTop: 8, justifyContent: 'space-between', width: '100%' }}>
-        <Text type="secondary">Language: {language}</Text>
-        <Button onClick={() => onRun?.(value)} type="primary">Run</Button>
-      </Space>
 
     </Card>
   )
