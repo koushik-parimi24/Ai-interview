@@ -10,6 +10,7 @@ export default function CodeEditor({ language = 'javascript', value, onChange, o
 
   return (
     <Card className="glass-card" bodyStyle={{ padding: 8 }}>
+      <text level={4} margin={18}>Write your code here</text  >
       <div style={{ height: 'clamp(200px, 40vh, 360px)', borderRadius: 8, overflow: 'hidden' }}>
         <Editor
           height="100%"
@@ -45,11 +46,7 @@ export default function CodeEditor({ language = 'javascript', value, onChange, o
         <Text type="secondary">Language: {language}</Text>
         <Button onClick={() => onRun?.(value)} type="primary">Run</Button>
       </Space>
-      {output != null && (
-        <Card size="small" style={{ marginTop: 8, maxHeight: 200, overflow: 'auto' }} className="glass-card">
-          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{String(output)}</pre>
-        </Card>
-      )}
+
     </Card>
   )
 }
