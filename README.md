@@ -46,19 +46,8 @@ AI	Azure OpenAI API / OpenRouter API
 Parsing	pdfjs-dist (PDF), mammoth (DOCX)
 Hosting	Vercel / Netlify (Recommended)
 📂 Project Structure
-AI-Interview/
-├── public/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   ├── hooks/
-│   ├── redux/
-│   ├── utils/
-│   └── main.jsx
-├── .env.local.example
-├── package.json
-├── vite.config.js
-└── README.md
+<img width="174" height="333" alt="image" src="https://github.com/user-attachments/assets/ada14902-ddbf-49fb-89ce-ae9e5dc70e32" />
+
 
 ⚡ Getting Started
 1. Clone the Repository
