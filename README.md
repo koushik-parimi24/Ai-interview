@@ -46,6 +46,9 @@ AI	Azure OpenAI API / OpenRouter API
 Parsing	pdfjs-dist (PDF), mammoth (DOCX)
 Hosting	Vercel / Netlify (Recommended)
 📂 Project Structure
+
+
+
 <img width="174" height="333" alt="image" src="https://github.com/user-attachments/assets/ada14902-ddbf-49fb-89ce-ae9e5dc70e32" />
 
 
