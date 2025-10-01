@@ -195,7 +195,7 @@ export default function Dashboard() {
             qa: Array.isArray(r.qa) ? r.qa : [],
             updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : undefined,
             resumePath: r.resume_path || null,
-            chats: [],
+            chats: Array.isArray(r.chats) ? r.chats : [],
           }))
           setRemote(mapped)
         })

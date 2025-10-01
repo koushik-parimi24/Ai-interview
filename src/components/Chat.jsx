@@ -42,6 +42,7 @@ export default function Chat({ activeSession, candidate }) {
   const [remaining, setRemaining] = useState(0)
   const [busy, setBusy] = useState(false)
   const [codeOutput, setCodeOutput] = useState('')
+  const [finalizing, setFinalizing] = useState(false)
   const submittingRef = useRef(false)
   const scrollRef = useRef(null)
 
@@ -109,31 +110,39 @@ export default function Chat({ activeSession, candidate }) {
     if (nextIdx >= total) {
       // finalize: rescore all (ensures consistency if AI scoring updated)
       const combinedAnswers = [...activeSession.answers, { questionId: currentQuestion.id, text }]
-      const qa = []
-      for (const q of activeSession.questions) {
-        const ans = combinedAnswers.find((a) => a.questionId === q.id) || { text: '' }
-        const { score: s, feedback } = await scoreAnswer(q, ans.text)
-        const timeTaken = (combinedAnswers.find((a) => a.questionId === q.id) || {}).timeTaken
-        qa.push({ id: q.id, level: q.level, text: q.text, answer: ans.text, score: s, feedback: feedback || '', timeTaken: timeTaken ?? null })
-      }
-      const finalScore = qa.reduce((s, x) => s + (x.score || 0), 0)
-      const summary = await summarizeCandidateSmart(activeSession.profile, qa, finalScore)
-      dispatch(finalizeCandidate({ candidateId: candidate.id, score: finalScore, summary, qa }))
+      setFinalizing(true)
+      const hide = message.loading({ content: 'Finalizing your results...', key: 'finalize', duration: 0 })
       try {
-        await saveInterviewResult({ profile: activeSession.profile, qa, score: finalScore, summary })
-      } catch (e) {
-        console.warn('Failed to save result to Supabase:', e?.message || e)
+        const answersById = new Map(combinedAnswers.map((a) => [a.questionId, a]))
+        // Parallelize scoring across questions to reduce total time
+        const qa = await Promise.all(activeSession.questions.map(async (q) => {
+          const ans = answersById.get(q.id) || { text: '' }
+          const { score: s, feedback } = await scoreAnswer(q, ans.text)
+          const timeTaken = (answersById.get(q.id) || {}).timeTaken
+          return { id: q.id, level: q.level, text: q.text, answer: ans.text, score: s, feedback: feedback || '', timeTaken: timeTaken ?? null }
+        }))
+        const finalScore = qa.reduce((s, x) => s + (x.score || 0), 0)
+        const summary = await summarizeCandidateSmart(activeSession.profile, qa, finalScore)
+        dispatch(finalizeCandidate({ candidateId: candidate.id, score: finalScore, summary, qa }))
+        try {
+          await saveInterviewResult({ profile: activeSession.profile, qa, score: finalScore, summary, chats: candidate?.chats || [] })
+        } catch (e) {
+          console.warn('Failed to save result to Supabase:', e?.message || e)
+        }
+        dispatch(addChatEntry({ candidateId: candidate.id, entry: { sender: 'ai', text: `Interview complete. Final score: ${finalScore}/60. Summary: ${summary}`, time: Date.now() } }))
+        dispatch(endSession())
+        modal.success({
+          title: 'Interview Complete',
+          content: `Your final score is ${finalScore}/60. A summary has been generated in the chat and dashboard.`,
+          okText: 'Great!'
+        })
+        setInput('')
+      } finally {
+        setBusy(false)
+        submittingRef.current = false
+        setFinalizing(false)
+        message.destroy('finalize')
       }
-      dispatch(addChatEntry({ candidateId: candidate.id, entry: { sender: 'ai', text: `Interview complete. Final score: ${finalScore}/60. Summary: ${summary}`, time: Date.now() } }))
-      dispatch(endSession())
-      modal.success({
-        title: 'Interview Complete',
-        content: `Your final score is ${finalScore}/60. A summary has been generated in the chat and dashboard.`,
-        okText: 'Great!'
-      })
-      setInput('')
-      setBusy(false)
-      submittingRef.current = false
       return
     }
     dispatch(nextQuestion())
@@ -236,6 +245,11 @@ export default function Chat({ activeSession, candidate }) {
             </Form>
           )}
         </>
+      )}
+      {finalizing && (
+        <div className="fullscreen-overlay">
+          <Spin tip="Finalizing results..." size="large" />
+        </div>
       )}
     </Space>
   )

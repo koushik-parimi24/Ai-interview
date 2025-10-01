@@ -58,3 +58,15 @@
   .glass-panel { padding: 8px; }
   .header-title { max-width: 60vw; font-size: 18px !important; }
 }
+
+/* Fullscreen overlay spinner */
+.fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 12, 20, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 2000;
+}

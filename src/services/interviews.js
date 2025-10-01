@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabaseClient'
 import { deleteResume } from './storage'
 
-export async function saveInterviewResult({ profile, qa, score, summary }) {
+export async function saveInterviewResult({ profile, qa, score, summary, chats }) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
   const base = {
@@ -13,17 +13,19 @@ export async function saveInterviewResult({ profile, qa, score, summary }) {
     summary: summary || null,
     qa: qa || [],
   }
-  const withResume = profile?.resumePath ? { ...base, resume_path: profile.resumePath } : base
+  // Include optional fields if available
+  let payload = { ...base }
+  if (profile?.resumePath) payload.resume_path = profile.resumePath
+  if (Array.isArray(chats)) payload.chats = chats
 
-  // Try inserting with resume_path when available; if the column doesn't exist yet, retry without it
   const tryInsert = async (row) => {
     const { error } = await supabase.from('interviews').insert(row)
     return { error }
   }
 
-  let { error } = await tryInsert(withResume)
-  if (error && (error.code === '42703' || /column\s+.*resume_path.*\s+does not exist/i.test(error.message || ''))) {
-    // Fallback: insert without resume_path column
+  let { error } = await tryInsert(payload)
+  if (error && (error.code === '42703' || /column\s+.*does not exist/i.test(error.message || ''))) {
+    // Fallback: strip unknown columns and insert minimal row
     const { error: e2 } = await tryInsert(base)
     if (e2) throw e2
     return
