@@ -10,11 +10,9 @@ Dual Role System: Separate interfaces for interviewers and interviewees.
 
 Timed Interviews: 6-question format (2 easy, 2 medium, 2 hard) with time constraints.
 
-<<<<<<< HEAD
+
 Real-time AI Scoring: Instant feedback and scoring using Azure OpenAI (preferred) or OpenRouter.
-=======
 Real-time AI Scoring: Instant feedback and scoring using the OpenRouter API and Azure OpenAI.
->>>>>>> 36a52780f839c1778483020c1a484165f7f13446
 
 Resume Processing: Upload and parse PDF/DOCX resumes for context-aware questions.
 
