@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Card, Form, Input, Progress, Space, Typography, message, App as AntApp } from 'antd'
-import CodeEditor from './CodeEditor'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
+import { Button, Card, Form, Input, Progress, Space, Typography, message, App as AntApp, Spin } from 'antd'
+// Lazy-load Monaco editor to reduce initial bundle size
+const CodeEditor = lazy(() => import('./CodeEditor'))
 import { runJavaScript } from '../utils/codeRunner'
 import { useDispatch } from 'react-redux'
 import { addChatEntry, upsertCandidate, finalizeCandidate } from '../slices/candidatesSlice'
@@ -189,17 +190,19 @@ export default function Chat({ activeSession, candidate }) {
           </Card>
           {currentQuestion?.kind === 'code' ? (
             <Space direction="vertical" style={{ width: '100%' }}>
-              <CodeEditor
-                language="javascript"
-                value={input}
-                onChange={setInput}
-                onRun={(code) => {
-                  const { output, error } = runJavaScript(code || '')
-                  setCodeOutput(error ? `Error: ${error}` : (output || '(no output)'))
-                  dispatch(addChatEntry({ candidateId: candidate.id, entry: { sender: 'system', text: `[Run Output]\n${error ? `Error: ${error}` : (output || '(no output)')}`, time: Date.now() } }))
-                }}
-                output={codeOutput}
-              />
+              <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: 12 }}><Spin /></div>}>
+                <CodeEditor
+                  language="javascript"
+                  value={input}
+                  onChange={setInput}
+                  onRun={(code) => {
+                    const { output, error } = runJavaScript(code || '')
+                    setCodeOutput(error ? `Error: ${error}` : (output || '(no output)'))
+                    dispatch(addChatEntry({ candidateId: candidate.id, entry: { sender: 'system', text: `[Run Output]\n${error ? `Error: ${error}` : (output || '(no output)')}`, time: Date.now() } }))
+                  }}
+                  output={codeOutput}
+                />
+              </Suspense>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button type="primary" onClick={handleSubmit} disabled={busy}>Submit</Button>
               </div>

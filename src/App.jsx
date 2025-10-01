@@ -13,7 +13,7 @@ import { MenuOutlined, LoginOutlined, LogoutOutlined, TeamOutlined, SolutionOutl
 import SettingsModal from './components/SettingsModal'
 import LoginPage from './pages/Login'
 import SignupPage from './pages/Signup'
-import { RequireAuth, RequireRole } from './routes/guards'
+import { RequireAuth, RequireRole, RedirectIfAuthed } from './routes/guards'
 import { logout } from './slices/authSlice'
 
 const { Header, Content } = Layout
@@ -29,6 +29,15 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const screens = useBreakpoint()
+
+  // Redirect to the correct dashboard when authenticated from root/login/signup
+  useEffect(() => {
+    if (!user || !profile) return
+    const roleRoute = profile.user_type === 'interviewer' ? '/interviewer' : '/interviewee'
+    if (["/", "/login", "/signup"].includes(location.pathname)) {
+      navigate(roleRoute, { replace: true })
+    }
+  }, [user, profile, location.pathname, navigate])
 
 return (
     <ConfigProvider
@@ -83,7 +92,13 @@ return (
         <Layout style={{ minHeight: '100vh' }}>
           <Header className="app-header" style={{ color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <Title level={3} className="header-title" style={{ margin: 0, lineHeight: 1 }}>
-              <a onClick={() => navigate('/')}>AI-Interview Assistant</a>
+              <a onClick={() => {
+                if (user && profile) {
+                  navigate(profile.user_type === 'interviewer' ? '/interviewer' : '/interviewee')
+                } else {
+                  navigate('/')
+                }
+              }}>AI-Interview Assistant</a>
             </Title>
 
             {screens.md ? (
@@ -148,9 +163,11 @@ return (
           </Header>
 
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route element={<RedirectIfAuthed />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+            </Route>
 
             <Route element={<RequireAuth />}> 
               <Route element={<RequireRole role="interviewee" />}> 

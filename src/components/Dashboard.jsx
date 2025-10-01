@@ -1,4 +1,4 @@
-import { Button, Card, Drawer, Grid, Input, Progress, Space, Table, Tag, Typography, Row, Col, Statistic, message, Popconfirm } from 'antd'
+import { Button, Card, Drawer, Grid, Input, Progress, Space, Table, Tag, Typography, Row, Col, Statistic, message, Popconfirm, Skeleton } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { selectCandidates, selectAuth } from '../store'
@@ -174,6 +174,7 @@ export default function Dashboard() {
   const [remote, setRemote] = useState(null) // null=not loaded, []=loaded
   const [deleting, setDeleting] = useState({})
   const screens = useBreakpoint()
+  const small = !screens.md
 
   const isInterviewer = authProfile?.user_type === 'interviewer'
 
@@ -217,6 +218,13 @@ export default function Dashboard() {
       .map((c) => ({ key: c.id, ...c }))
   }, [list, query, remote])
 
+  // Precompute stats with hooks at top-level to respect Rules of Hooks
+  const avgScore = useMemo(() => data.length ? Math.round((data.reduce((s, c) => s + (c.score || 0), 0) / data.length) * 10) / 10 : 0, [data])
+  const lastUpdated = useMemo(() => {
+    const ts = Math.max(...data.map((d) => d.updatedAt || 0), 0)
+    return ts ? new Date(ts).toLocaleString() : '-'
+  }, [data])
+
   const handleDelete = async (rec) => {
     setDeleting((d) => ({ ...d, [rec.id]: true }))
     try {
@@ -253,41 +261,52 @@ export default function Dashboard() {
   ]
 
 
+  const loading = isInterviewer && remote === null
+
   return (
     <Space direction="vertical" style={{ width: '100%' }} className="dashboard-wrap">
       <Title className="section-title" level={3}>Interviewer Dashboard</Title>
 
       {/* Summary stats */}
       <div className="glass-card fade-in" style={{ padding: 12 }}>
-        <Row gutter={[12, 12]}>
-          <Col xs={12} md={8}>
-            <Card className="glass-card" size="small">
-              <Statistic title={<Text type="secondary">Total Results</Text>} value={data.length} valueStyle={{ color: '#fff' }} />
-            </Card>
-          </Col>
-          <Col xs={12} md={8}>
-            <Card className="glass-card" size="small">
-              <Statistic
-                title={<Text type="secondary">Average Score</Text>}
-                value={useMemo(() => data.length ? Math.round((data.reduce((s, c) => s + (c.score || 0), 0) / data.length) * 10) / 10 : 0, [data])}
-                suffix="/60"
-                valueStyle={{ color: '#fff' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} md={8}>
-            <Card className="glass-card" size="small">
-              <Statistic
-                title={<Text type="secondary">Last Updated</Text>}
-                value={useMemo(() => {
-                  const ts = Math.max(...data.map((d) => d.updatedAt || 0), 0)
-                  return ts ? new Date(ts).toLocaleString() : '-'
-                }, [data])}
-                valueStyle={{ color: '#fff' }}
-              />
-            </Card>
-          </Col>
-        </Row>
+        {loading ? (
+          <Row gutter={[12, 12]}>
+            {[1,2,3].map((i) => (
+              <Col key={i} xs={12} md={8}>
+                <Card className="glass-card" size="small">
+                  <Skeleton active paragraph={false} title={{ width: '60%' }} />
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          <Row gutter={[12, 12]}>
+            <Col xs={12} md={8}>
+              <Card className="glass-card" size="small">
+                <Statistic title={<Text type="secondary">Total Results</Text>} value={data.length} valueStyle={{ color: '#fff' }} />
+              </Card>
+            </Col>
+            <Col xs={12} md={8}>
+              <Card className="glass-card" size="small">
+                <Statistic
+                  title={<Text type="secondary">Average Score</Text>}
+                  value={avgScore}
+                  suffix="/60"
+                  valueStyle={{ color: '#fff' }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} md={8}>
+              <Card className="glass-card" size="small">
+                <Statistic
+                  title={<Text type="secondary">Last Updated</Text>}
+                  value={lastUpdated}
+                  valueStyle={{ color: '#fff' }}
+                />
+              </Card>
+            </Col>
+          </Row>
+        )}
       </div>
 
       {/* Search */}
@@ -295,14 +314,62 @@ export default function Dashboard() {
         <Input.Search placeholder="Search by name or email" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
 
-      {/* Table */}
+      {/* Table / Cards responsive */}
       <div className="glass-card fade-in" style={{ padding: 12 }}>
-        <Table 
-          columns={columns} 
-          dataSource={data} 
-          pagination={{ pageSize: screens.md ? 10 : 6 }}
-          scroll={{ x: 900 }}
-        />
+        {small ? (
+          loading ? (
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {[1,2,3,4].map((i) => (
+                <Card key={i} className="glass-card" size="small">
+                  <Skeleton active />
+                </Card>
+              ))}
+            </Space>
+          ) : (
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {data.map((rec) => (
+                <Card key={rec.key} className="glass-card" size="small">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <Text strong style={{ display: 'block' }}>{rec.name || '-'}</Text>
+                      <Text type="secondary" style={{ display: 'block', wordBreak: 'break-word' }}>{rec.email || '-'}</Text>
+                      {rec.phone && <Text style={{ display: 'block' }}>{rec.phone}</Text>}
+                      <Text type="secondary" style={{ display: 'block' }}>{rec.updatedAt ? new Date(rec.updatedAt).toLocaleString() : '-'}</Text>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <Progress
+                        type="circle"
+                        size={44}
+                        percent={(rec.score || 0) * 10}
+                        strokeColor={getScoreColor(rec.score || 0)}
+                        format={() => `${rec.score || 0}`}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 8, display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    <Button size="small" onClick={() => setSelected(rec)}>View</Button>
+                    <Popconfirm
+                      title="Delete this candidate?"
+                      okText="Delete"
+                      okType="danger"
+                      onConfirm={() => handleDelete(rec)}
+                    >
+                      <Button type="primary" danger size="small" loading={!!deleting[rec.id]}>Delete</Button>
+                    </Popconfirm>
+                  </div>
+                </Card>
+              ))}
+            </Space>
+          )
+        ) : (
+          <Table 
+            columns={columns} 
+            dataSource={data} 
+            loading={loading}
+            pagination={{ pageSize: screens.md ? 10 : 6 }}
+            scroll={{ x: 'max-content' }}
+          />
+        )}
       </div>
 
       <Drawer title={selected?.name || 'Candidate'} width={screens.md ? 900 : '100%'} open={!!selected} onClose={() => setSelected(null)}>

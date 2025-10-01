@@ -47,6 +47,14 @@ export async function deleteInterview({ id, resumePath }) {
   if (resumePath) {
     try { await deleteResume(resumePath) } catch (e) { /* ignore */ }
   }
-  const { error } = await supabase.from('interviews').delete().eq('id', id)
+  const { data, error } = await supabase
+    .from('interviews')
+    .delete()
+    .eq('id', id)
+    .select('id')
+
   if (error) throw error
+  if (!data || (Array.isArray(data) && data.length === 0)) {
+    throw new Error('Delete not permitted (RLS) or record not found')
+  }
 }

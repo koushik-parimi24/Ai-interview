@@ -26,6 +26,34 @@
 /* dashboard */
 .dashboard-wrap { gap: 12px; display: flex; flex-direction: column; }
 
+/* Subtle animation helpers */
+.fade-in { animation: fade-in 320ms ease-out both; }
+.slide-up { animation: slide-up 360ms ease-out both; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); filter: saturate(0.9); }
+  to { opacity: 1; transform: translateY(0); filter: saturate(1); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Glass card refinement */
+.glass-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  will-change: transform;
+}
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  border-color: rgba(255,255,255,0.18);
+}
+
 @media (max-width: 768px) {
   .glass-panel { padding: 8px; }
   .header-title { max-width: 60vw; font-size: 18px !important; }
